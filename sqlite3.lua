@@ -35,7 +35,7 @@ SQLite3 = class(function()
   end
 
   function self:get(table_name, num_rows, columns)
-    local limit = num_rows and ('LIMIT ' .. num_rows) or ''
+    local limit = self:_limit(num_rows)
     local columns = columns and table.concat(columns, ',') or '*'
     local query = trim('SELECT ' .. columns .. ' FROM ' .. table_name .. ' ' .. self._where .. ' ' .. self._order .. ' ' .. limit)
     self:reset()
@@ -91,12 +91,13 @@ SQLite3 = class(function()
     end
     local sql = table.concat(array, ',')
 
-    self.db:exec(trim('UPDATE ' .. table_name .. ' SET ' .. sql .. ' ' .. self._where .. ' ' .. self._order))
+    self.db:exec(trim('UPDATE ' .. table_name .. ' SET ' .. sql .. ' ' .. self._where))
     self:reset()
   end
 
   function self:delete(table_name, num_rows)
-    local limit = num_rows and ('LIMIT ' .. num_rows) or ''
+    local limit = self:_limit(num_rows)
+
     self.db:exec(trim('DELETE FROM ' .. table_name .. ' '  .. self._where .. ' ' .. limit))
     self:reset()
   end
@@ -112,6 +113,10 @@ SQLite3 = class(function()
     end
 
     return self
+  end
+
+  function self:_limit(num_rows)
+    return num_rows and ('LIMIT ' .. num_rows) or ''
   end
 
   function self:reset()
