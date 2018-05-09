@@ -1,4 +1,3 @@
--- WRAPPER --
 local function class(constructor)
   local namespace = {}
   namespace.__index = namespace
@@ -25,9 +24,8 @@ local function trim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
--- SQLite --
 local sqlite3 = require('lsqlite3')
-SQLite = class(function()
+SQLite3 = class(function()
   self.db = nil
   self._where = ''
   self._order = ''
@@ -79,7 +77,7 @@ SQLite = class(function()
     local columns, values = {}, {}
     for column, value in pairs(table_data) do
       table.insert(columns, column)
-      table.insert(values, value)
+      table.insert(values, '"' .. value .. '"')
     end
 
     self.db:exec(trim('INSERT INTO ' .. table_name .. ' (' .. table.concat(columns, ',') .. ') VALUES(' .. table.concat(values, ',') .. ')'))
@@ -102,6 +100,7 @@ SQLite = class(function()
   function self:delete(table_name, num_rows)
     local limit = num_rows and ('LIMIT ' .. num_rows) or ''
     self.db:exec(trim('DELETE FROM ' .. table_name .. ' '  .. self._where .. ' ' .. limit))
+    self:reset()
   end
 
   function self:orderBy(column, direction)
@@ -122,15 +121,3 @@ SQLite = class(function()
     self._order = ''
   end
 end)
-
--- test
-local db = SQLite.new('test.db')
-
-local result = db
-  :orderBy('exp', 'asc')
-  :orderBy('name', 'desc')
-  :get('users')
-
-for _, row in pairs(result) do
-  print(row.id, row.name, row.level, row.exp)
-end
