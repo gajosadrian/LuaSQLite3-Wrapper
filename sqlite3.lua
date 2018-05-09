@@ -85,13 +85,11 @@ SQLite3 = class(function()
   end
 
   function self:update(table_name, table_data)
-    local sql = ''
-
     local array = {}
     for column, value in pairs(table_data) do
-      table.insert(array, column .. '=' .. value)
+      table.insert(array, column .. '="' .. value .. '"')
     end
-    sql = table.concat(array, ',')
+    local sql = table.concat(array, ',')
 
     self.db:exec(trim('UPDATE ' .. table_name .. ' SET ' .. sql .. ' ' .. self._where .. ' ' .. self._order))
     self:reset()
