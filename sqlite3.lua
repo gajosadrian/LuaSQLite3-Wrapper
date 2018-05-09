@@ -1,4 +1,6 @@
-local function class(constructor)
+SQLite_lib = {}
+
+function SQLite_lib.class(constructor)
   local namespace = {}
   namespace.__index = namespace
   namespace.new = function(...)
@@ -19,10 +21,12 @@ local function class(constructor)
   end
   return namespace
 end
+local class = SQLite_lib.class
 
-local function trim(s)
+function SQLite_lib.trim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
+local trim = SQLite_lib.trim
 
 local sqlite3 = require('lsqlite3')
 SQLite3 = class(function()
