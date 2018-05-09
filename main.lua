@@ -46,8 +46,8 @@ SQLite = class(function()
     for row in self.db:nrows(query) do
       local tab = {}
 
-      for _, v in pairs(row) do
-        tab[_] = v
+      for column, value in pairs(row) do
+        tab[column] = value
       end
 
       table.insert(array, tab)
@@ -124,7 +124,7 @@ SQLite = class(function()
 end)
 
 -- test
-local db = SQLite.new('sys/lua/G-Database/test.db')
+local db = SQLite.new('test.db')
 
 local result = db
   :orderBy('exp', 'asc')
