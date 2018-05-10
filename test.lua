@@ -16,9 +16,15 @@ User = classExtends(dbObject, {
   dbTable = 'users',
 }, function()
   function self:__construct()
-    self.name = math.random(100, 999)
+    self.name = 'Unknown'
+    self.level = 1
+    self.exp = 0
   end
 end)
 
-local user = User.byId(1)
+local user = User.byId(2)
 print(user.id, user.name, user.level, user.exp)
+
+user.level = 90
+print(user.id, user.name, user.level, user.exp)
+user:save()

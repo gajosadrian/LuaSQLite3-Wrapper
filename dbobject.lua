@@ -36,14 +36,19 @@ dbObject = class({
     })
   end,
 }, function()
-  self.db = SQLite3.getInstance()
   self.id = nil
+  self.db = nil
+  self.dbColumns = {}
+
+  function self:__construct()
+    self.db = SQLite3.getInstance()
+    self.dbColumns = self:getColumns()
+  end
 
   function self:dbMapping()
     local data = self:getData('id', self.id)
-    local columns = self:getColumns()
 
-    for _, column in pairs(columns) do
+    for _, column in pairs(self.dbColumns) do
       self[column] = data[column]
     end
   end
@@ -63,7 +68,13 @@ dbObject = class({
   end
 
   function self:save()
-    local array = {}
+    local data = {}
+
+    for _, column in pairs(self.dbColumns) do
+      data[column] = self[column]
+    end
+
+    self.db:update(dbObject.dbTable, data)
   end
 
   function self:dbReset()
