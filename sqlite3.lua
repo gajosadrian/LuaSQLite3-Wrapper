@@ -1,5 +1,13 @@
-SQLite_lib = {}
+local function tableContains(table, element)
+  for _, value in pairs(table) do
+    if value == element then
+      return true
+    end
+  end
+  return false
+end
 
+SQLite_lib = {}
 function SQLite_lib.class(constructor)
   local namespace = {}
   namespace.__index = namespace
@@ -9,8 +17,8 @@ function SQLite_lib.class(constructor)
     local this = {}
     self = this
     -- metatable
-    setmetatable(this,namespace)
-    constructor(unpack(arg))
+    setmetatable(this, namespace)
+    constructor(namespace)
     -- constructor
     if this.__construct then
       this:__construct(unpack(arg))
@@ -23,20 +31,61 @@ function SQLite_lib.class(constructor)
 end
 local class = SQLite_lib.class
 
+function SQLite_lib.classExtends(extend, constructor)
+  namespace = {}
+  namespace.__index = namespace
+  namespace.new = function(...)
+    local outerSelf = self
+    -- aliases
+    local this = extend.new()
+    self = this
+    -- metatable
+    -- setmetatable(this,namespace)
+    constructor(namespace)
+    -- constructor
+    if this.__construct then
+      this:__construct(unpack(arg))
+    end
+    -- finish
+    self = outerSelf -- used to allow constructors inside constructors
+    return this
+  end
+
+  -- copying statics
+  local notAllowedVarNames = {'new', 'newChild', '__index', '__newindex'}
+  for varName, varValue in pairs(namespace) do
+    print(varName, varValue)
+    if not tableContains(notAllowedVarNames, varName) then
+      table.insert(notAllowedVarNames, varName)
+      extend[varName] = varValue
+    elseif varName == 'new' then
+      extend['newChild'] = varValue
+    end
+  end
+  for varName, varValue in pairs(extend) do
+    if not tableContains(notAllowedVarNames, varName) then
+      namespace[varName] = varValue
+    end
+  end
+
+  return namespace
+end
+local classExtends = SQLite_lib.classExtends
+
 function SQLite_lib.trim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 local trim = SQLite_lib.trim
 
 local sqlite3 = require('lsqlite3')
-SQLite3 = class(function()
+SQLite3 = class(function(static)
   self.db = nil
   self._where = ''
   self._order = ''
 
   function self:__construct(path)
     self.db = sqlite3.open(path)
-    SQLite3_db = self.db
+    SQLite3_db = self
   end
 
   function self:get(table_name, num_rows, columns)
