@@ -36,6 +36,7 @@ SQLite3 = class(function()
 
   function self:__construct(path)
     self.db = sqlite3.open(path)
+    SQLite3_db = self.db
   end
 
   function self:get(table_name, num_rows, columns)
@@ -128,3 +129,7 @@ SQLite3 = class(function()
     self._order = ''
   end
 end)
+
+function SQLite3.getInstance()
+  return SQLite3_db
+end
