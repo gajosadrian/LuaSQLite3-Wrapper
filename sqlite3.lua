@@ -1,16 +1,13 @@
-local function tableContains(table, element)
-  for _, value in pairs(table) do
-    if value == element then
-      return true
-    end
-  end
-  return false
-end
-
 SQLite_lib = {}
-function SQLite_lib.class(constructor)
+function SQLite_lib.class(statics, constructor)
+  if not constructor then
+    constructor = statics
+    statics = nil
+  end
+
   local namespace = {}
   namespace.__index = namespace
+  namespace.statics = statics
   namespace.new = function(...)
     local outerSelf = self
     -- aliases
@@ -27,11 +24,24 @@ function SQLite_lib.class(constructor)
     self = outerSelf -- used to allow constructors inside constructors
     return this
   end
+
+  -- copying statics
+  if statics then
+    for varName, varValue in pairs(statics) do
+      namespace[varName] = varValue
+    end
+  end
+
   return namespace
 end
 local class = SQLite_lib.class
 
-function SQLite_lib.classExtends(extend, constructor)
+function SQLite_lib.classExtends(extend, statics, constructor)
+  if not constructor then
+    constructor = statics
+    statics = nil
+  end
+
   namespace = {}
   namespace.__index = namespace
   namespace.new = function(...)
@@ -52,20 +62,16 @@ function SQLite_lib.classExtends(extend, constructor)
   end
 
   -- copying statics
-  local notAllowedVarNames = {'new', 'newChild', '__index', '__newindex'}
-  for varName, varValue in pairs(namespace) do
-    print(varName, varValue)
-    if not tableContains(notAllowedVarNames, varName) then
-      table.insert(notAllowedVarNames, varName)
-      extend[varName] = varValue
-    elseif varName == 'new' then
-      extend['newChild'] = varValue
-    end
-  end
-  for varName, varValue in pairs(extend) do
-    if not tableContains(notAllowedVarNames, varName) then
+  if statics then
+    for varName, varValue in pairs(extend.statics) do
       namespace[varName] = varValue
     end
+  end
+
+  extend['newChild'] = namespace.new
+  for varName, varValue in pairs(statics) do
+    namespace[varName] = varValue
+    extend[varName] = varValue
   end
 
   return namespace

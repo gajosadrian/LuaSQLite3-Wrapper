@@ -2,26 +2,64 @@ local class = SQLite_lib.class
 local classExtends = SQLite_lib.classExtends
 local trim = SQLite_lib.trim
 
-dbObject = class(function(static)
-  static.db = SQLite3.getInstance()
-  static._where = {}
-  static.dbTable = nil
-  static.dbColumns = {}
+dbObject = class({
+  _where = {},
+  dbTable = nil,
 
+  byId = function(id)
+    local instance = dbObject.newChild()
+
+    instance.id = id
+    instance:dbMapping()
+
+    return instance
+  end,
+
+  get = function(numRows)
+    for property, value in pairs(dbObject._where) do
+      db:where(property, value)
+    end
+
+    db:get(dbObject.dbTable, numRows, 'id')
+    self:reset()
+  end,
+
+  getOne = function()
+    local result = dbObject.get(1)
+    return result[1]
+  end,
+
+  where = function(property, value)
+    table.insert(dbObject._where, {
+      property = property,
+      value = value
+    })
+  end,
+}, function()
+  self.db = SQLite3.getInstance()
   self.id = nil
-  self._where = {}
 
   function self:dbMapping()
-    local data = self:getData('id', self.id);
+    local data = self:getData('id', self.id)
+    local columns = self:getColumns()
 
-    for _, column in pairs(static.dbColumns) do
+    for _, column in pairs(columns) do
       self[column] = data[column]
     end
   end
 
   function self:getData(column, value)
-    print(static.dbTable)
-    -- return static.db:where(column, value):getOne(static.dbTable)
+    return self.db:where(column, value):getOne(dbObject.dbTable)
+  end
+
+  function self:getColumns()
+    local columns = {}
+
+    for row in self.db.db:nrows('PRAGMA table_info(' .. dbObject.dbTable .. ')') do
+      table.insert(columns, row.name)
+    end
+
+    return columns
   end
 
   function self:save()
@@ -29,51 +67,6 @@ dbObject = class(function(static)
   end
 
   function self:dbReset()
-    static._where = {}
+    dbObject._where = {}
   end
 end)
-
-function dbObject.byId(id)
-  local instance = dbObject.newChild()
-
-  instance.id = id
-  instance:dbMapping()
-
-  return instance
-end
-
-function dbObject.get(numRows)
-  for property, value in pairs(dbObject._where) do
-    db:where(property, value)
-  end
-
-  db:get(dbObject.dbTable, numRows, 'id')
-  self:reset()
-end
-
-function dbObject.getOne()
-  local result = dbObject.get(1)
-  return result[1]
-end
-
-function dbObject.where(property, value)
-  table.insert(dbObject._where, {
-    property = property,
-    value = value
-  })
-end
-
-dbObject.__newindex = function(self, key, value)
-  if key == 'dbTable' then
-    if not dbObject.db then return end
-    local columns = {}
-
-    for row in static.db:nrows('PRAGMA table_info(' .. value .. ')') do
-      table.insert(columns, row.name)
-    end
-
-    dbObject.dbColumns = columns
-  else
-    rawset(self, key, value)
-  end
-end
