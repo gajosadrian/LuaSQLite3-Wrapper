@@ -43,6 +43,19 @@ function SQLite_lib.classExtends(extend, statics, constructor)
   end
 
   namespace = {}
+
+  -- copying statics
+  for varName, varValue in pairs(extend.statics) do
+    namespace[varName] = varValue
+  end
+  if statics then
+    for varName, varValue in pairs(statics) do
+      namespace[varName] = varValue
+      extend[varName] = varValue
+    end
+  end
+  -- END OF capying statics
+
   namespace.__index = namespace
   namespace.new = function(...)
     local outerSelf = self
@@ -61,18 +74,7 @@ function SQLite_lib.classExtends(extend, statics, constructor)
     return this
   end
 
-  -- copying statics
-  if statics then
-    for varName, varValue in pairs(extend.statics) do
-      namespace[varName] = varValue
-    end
-  end
-
   extend['newChild'] = namespace.new
-  for varName, varValue in pairs(statics) do
-    namespace[varName] = varValue
-    extend[varName] = varValue
-  end
 
   return namespace
 end
@@ -122,7 +124,7 @@ SQLite3 = class(function(static)
   function self:where(property, value, operator, condition)
     operator = operator or '='
     condition = condition or 'AND'
-    local sql = property .. operator .. value
+    local sql = property .. operator .. '"' .. value .. '"'
 
     if self._where == '' then
       self._where = 'WHERE ' .. sql
@@ -146,6 +148,8 @@ SQLite3 = class(function(static)
 
   function self:update(table_name, table_data)
     local array = {}
+    table_data['id'] = nil
+
     for column, value in pairs(table_data) do
       table.insert(array, column .. '="' .. value .. '"')
     end

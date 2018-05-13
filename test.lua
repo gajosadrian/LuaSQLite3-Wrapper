@@ -22,9 +22,9 @@ User = classExtends(dbObject, {
   end
 end)
 
-local user = User.byId(2)
-print(user.id, user.name, user.level, user.exp)
+print( User.byId(1).name )
 
-user.level = 90
-print(user.id, user.name, user.level, user.exp)
-user:save()
+-- local users = User.get()
+-- for _, user in pairs(users) do
+--   print(user.id, user.name, user.level, user.exp)
+-- end

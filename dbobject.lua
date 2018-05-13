@@ -10,23 +10,35 @@ dbObject = class({
     local instance = dbObject.newChild()
 
     instance.id = id
-    instance:dbMapping()
+    local data = instance:getData()
+    instance:dbMapping(data)
 
     return instance
   end,
 
   get = function(numRows)
+    local db = SQLite3.getInstance()
+    local instances = {}
+
     for property, value in pairs(dbObject._where) do
       db:where(property, value)
     end
 
-    db:get(dbObject.dbTable, numRows, 'id')
+    local users = db:get(dbObject.dbTable, numRows)
+    for _, data in pairs(users) do
+      local instance = dbObject.newChild()
+      instance:dbMapping(data)
+
+      table.insert(instances, instance)
+    end
+
     self:reset()
+    return instances
   end,
 
   getOne = function()
-    local result = dbObject.get(1)
-    return result[1]
+    local instances = dbObject.get(1)
+    return instances[1]
   end,
 
   where = function(property, value)
@@ -45,16 +57,14 @@ dbObject = class({
     self.dbColumns = self:getColumns()
   end
 
-  function self:dbMapping()
-    local data = self:getData('id', self.id)
-
+  function self:dbMapping(data)
     for _, column in pairs(self.dbColumns) do
       self[column] = data[column]
     end
   end
 
-  function self:getData(column, value)
-    return self.db:where(column, value):getOne(dbObject.dbTable)
+  function self:getData()
+    return self.db:where('id', self.id):getOne(dbObject.dbTable)
   end
 
   function self:getColumns()
@@ -74,7 +84,11 @@ dbObject = class({
       data[column] = self[column]
     end
 
-    self.db:update(dbObject.dbTable, data)
+    if data['id'] then
+      self.db:update(dbObject.dbTable, data)
+    else
+      print 'insert'
+    end
   end
 
   function self:dbReset()
